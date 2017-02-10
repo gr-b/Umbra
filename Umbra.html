@@ -1,0 +1,247 @@
+<html>
+<head>
+
+</head>
+<body>
+	<canvas id="canvas" width="750" height="375" style="border:1px solid #c3c3c3">
+	</canvas>
+	<p id="thetext"> Nothing has been pressed </p>
+	<script>
+	var numFloatingLetters = 300;
+	var floatingLetters = [];
+	var hasNotClickedYet = true;
+	var delay = 75;
+	var numPlayers = 3;
+	var stillOnTitle = true;
+	
+	//Initialize the canvas
+	var canvas = document.getElementById("canvas");
+	window.addEventListener("keypress",doKeyDown);
+	window.addEventListener("mousedown",doMouseDown);
+	var ctx = canvas.getContext("2d");
+	
+	var currWord = "";
+	drawFloatingText();
+	
+	// Handles mouse click events
+	function doKeyDown(e) {
+		//console.log(e.keyCode);
+		var eChar = String.fromCharCode(e.keyCode);
+		//console.log(eChar);
+		document.getElementById("thetext").innerHTML = eChar + " has been pressed.";
+    }
+	
+	function drawTitle(){
+		// Draw the background first (cyan)
+		ctx.globalAlpha = 1;
+		ctx.fillStyle = "rgb(0,255,255)";
+		ctx.fillRect(0,0,750,375);
+		
+		// Title Text
+		ctx.fillStyle = "#00191a";
+		ctx.font = "30px Arial";
+		ctx.fillText("Umbra",200,150);
+		
+		// "Click anywhere to start"
+		ctx.globalAlpha = 0.5;
+		ctx.fillStyle = "rgb(195, 195, 195)";
+		ctx.font = "20px Arial";
+		ctx.fillText("Click anywhere to start",200,180);
+		ctx.globalAlpha = 1;
+	}
+	
+	// Draws all letters currently on the screen and calls the up function for each of them.
+	// If there are too few letters currently on the screen, generates an additional letter.
+	// Calls itself if the mouse has not been clicked yet.
+	function drawFloatingText(){
+		if(hasNotClickedYet){
+			clear();
+		}
+
+		drawTitle();
+		// If we need more letters on screen
+		if(floatingLetters.length < numFloatingLetters){
+			//Generate a random letter
+			for(k=0;k<1;k++){
+				floatingLetters.push(genFloatingLetter());
+				//console.log(floatingLetters.length);
+			}
+		}
+		// Now we have letters in the list
+		// Draw the letters, and move them up 
+		// and if after this, the letter is too high to be seen, cull the letter from the list
+		for(i=0;i<floatingLetters.length;i++){
+			drawLetter(floatingLetters[i]);
+			floatingLetters[i].up();
+			//console.log(floatingLetters[i].ypos);
+			// If the letter is too high, splice it out.
+			if(floatingLetters[i].ypos < 0){
+				floatingLetters.splice(i,1);
+			}
+		}
+		
+		if(hasNotClickedYet){
+			setTimeout(drawFloatingText, delay);
+		}
+	}
+	
+	// Draws the letter on the canvas.
+	function drawLetter(theLetter){
+		//console.log(theLetter.char);
+		ctx.fillStyle = "#c3c3c3";
+		ctx.font = "16px Arial";
+		ctx.fillText(theLetter.char,theLetter.xpos,theLetter.ypos);
+	}
+	
+	// Randomly generates a letter and an x position. Uses a y position of 380, a bit more than
+	// the height of the canvas.
+	function genFloatingLetter(){
+		// Generate a random number between 65(a) and 90(z)
+		var keyCode = Math.random()*25
+		keyCode = Math.floor(keyCode);
+		keyCode = keyCode + 65;
+		var keyChar = String.fromCharCode(keyCode);
+		//console.log(keyChar);
+		// Now generate a random x position
+		var xpos = Math.random()*750;
+		xpos = Math.floor(xpos);
+		var returnLetter = new letter(keyChar, xpos);
+		return returnLetter;
+		
+	}
+
+	function letter(char, xpos){
+		this.char = char;
+		this.xpos = xpos;
+		this.ypos = 385;
+		
+		// Moves the given letter up and to the side by a random amount.
+		this.up = function(){ var randup = Math.floor(Math.random()*5) + 3; // between 3 and 8
+							var randside = Math.floor(Math.random()*8)-4; //between -4 and 4
+							 this.ypos = this.ypos-randup;
+							 this.xpos = this.xpos+randside;}
+	}
+	
+	//Clears the game of objects
+	function clear(){
+		ctx.clearRect(0,0,canvas.width,canvas.height);
+		//canvas.width = canvas.width;
+		console.log("cleared");
+	}
+	
+	
+	// Called when the mouse is clicked down.
+	// Directs flow based on the game state.
+	function doMouseDown(e) {
+		if(hasNotClickedYet==true){
+			hasNotClickedYet = false;
+			clear();
+			initGame();
+		} else {
+			// This is for clicks that may happen during the game. DURING
+		}
+		document.getElementById("thetext").innerHTML = "The mouse has been clicked.";
+	}
+	
+	function triple(r, g, b){
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.rgb = function(){return rgb(this.r,this.g,this.b)} 
+	}
+	
+	// Initializes the game board once the mouse has been clicked
+	function initGame(){
+		transition(new triple(0,255,255), new triple(255,255,255), 750);
+	}
+	
+	// Transitions from the first rgb given to the second rgb given in the time given in milliseconds.
+	// Changes the background color from one to the other.
+	function transition(first, second, time){
+		var refresh = 25;
+		// Every refresh ms, change 
+		
+		// Number of times it changes
+		var freq = time/refresh;
+		var rDiff = first.r - second.r;
+		var r = Math.floor(rDiff/freq);
+		var gDiff = first.g - second.g;
+		var g = Math.floor(gDiff/freq);
+		var bDiff = first.b - second.b;
+		var b = Math.floor(bDiff/freq);
+		
+		tHelper(0, freq, refresh, first, new triple(r,g,b));
+	
+	}
+	function tHelper(i, freq, refresh, first, diff){
+		if(i<freq){
+			var r = first.r-(i*diff.r);
+			var g = first.g-(i*diff.g);
+			var b = first.b-(i*diff.b)
+			var opacity = 1-(i/freq);
+			var fillstring = "rgb(" + r + "," + g + 
+			"," + b + ")";
+			ctx.fillStyle = fillstring;
+			ctx.fillRect(0,0,750,375);
+			drawClearTitle(opacity);
+			setTimeout(function(){ tHelper(i+1,freq, refresh, first, diff);}, refresh);
+		}
+	}
+	// Rounds a given long to two digits
+	function round(num){
+		var longdigits = 100*num;
+		var digits = Math.floor(longdigits);
+		var rounded = digits/100;
+		return rounded;
+	}
+	function drawClearTitle(opacity){
+		// Round the opacity to 2 digits
+		var opac = round(opacity);
+		console.log(opac);
+		if(floatingLetters.length < numFloatingLetters){
+			//Generate a random letter
+			for(k=0;k<1;k++){
+				floatingLetters.push(genFloatingLetter());
+				//console.log(floatingLetters.length);
+			}
+		}
+		for(i=0;i<floatingLetters.length;i++){
+			var fillshit = "rgb(195,195,195)";
+			ctx.fillStyle = fillshit;
+			console.log(fillshit);
+			ctx.font = "16px Arial";
+			ctx.globalAlpha = opac;
+			ctx.fillText(floatingLetters[i].char,floatingLetters[i].xpos,floatingLetters[i].ypos);
+			ctx.globalAlpha=1;
+			floatingLetters[i].up();
+			//console.log(floatingLetters[i].ypos);
+			// If the letter is too high, splice it out.
+			if(floatingLetters[i].ypos < 0){
+				floatingLetters.splice(i,1);
+			}
+		}
+		ctx.globalAlpha = opac;
+		// Title Text
+		ctx.fillStyle = "#00191a";
+		ctx.font = "30px Arial";
+		ctx.fillText("Umbra",200,150);
+		
+		// "Click anywhere to start"
+		ctx.fillStyle = "rgb(195, 195, 195)";
+		ctx.font = "20px Arial";
+		ctx.fillText("Click anywhere to start",200,180);
+		ctx.globalAlpha = 1;
+	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	</script>
+</body>
+</html>
